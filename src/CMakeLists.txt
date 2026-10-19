@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.26 FATAL_ERROR)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 17)
-
-set(CMAKE_CUDA_ARCHITECTURES 86)
+# CUDA compute capability 8.9
+set(CMAKE_CUDA_ARCHITECTURES 89)
 
 project(GPURowhammer LANGUAGES CXX CUDA)
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --generate-line-info -O3 -Xcicc -O0 -Xptxas -O3 -gencode=arch=compute_86,code=sm_86")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --generate-line-info -O3 -Xcicc -O0 -Xptxas -O3")
 
 find_package(nvtx3 REQUIRED PATHS "./rmm_lib/lib/cmake/nvtx3" NO_DEFAULT_PATH)
 find_package(RMM REQUIRED PATHS "./rmm_lib/lib/cmake/rmm" NO_DEFAULT_PATH)
@@ -96,4 +96,3 @@ target_link_libraries(hammer_mem_manage PUBLIC hammer_lib)
 target_link_libraries(hammer_mem_manage PRIVATE Threads::Threads CUDA::cuda_driver)
 target_link_libraries(hammer_mem_manage PRIVATE rmm::rmm)
 target_link_libraries(hammer_mem_manage PRIVATE alloc)
-

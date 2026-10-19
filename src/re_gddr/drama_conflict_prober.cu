@@ -9,11 +9,12 @@ ConflictProber::ConflictProber (uint64_t n, uint64_t size, uint64_t range, uint6
                         uint64_t step)
     : m_n{ n }, m_size{ size }, m_range{ range }, m_it{ it }, m_step{ step }
 {
-  cudaMalloc (&mp_addr_layout, m_size);
-  cudaMalloc (&mp_time_arr_device, sizeof (uint64_t) * m_it);
-  cudaMalloc (&mp_addr_lst_device, m_n * sizeof (uint8_t *));
+  gpuErrchk (cudaMalloc (&mp_addr_layout, m_size));
+  gpuErrchk (cudaMalloc (&mp_time_arr_device,
+                         sizeof (uint64_t) * m_it * m_n));
+  gpuErrchk (cudaMalloc (&mp_addr_lst_device, m_n * sizeof (uint8_t *)));
   mp_addr_lst_host = new uint8_t *[m_n];
-  mp_time_arr_host = new uint64_t[m_it];
+  mp_time_arr_host = new uint64_t[m_it * m_n];
 }
 
 ConflictProber::~ConflictProber ()
@@ -47,24 +48,28 @@ uint64_t
 ConflictProber::repeat_n_addr_exp (std::ofstream *file, int modifier)
 {
   /* Copy the addresses to GPU usable memory */
-  cudaMemcpy (mp_addr_lst_device, mp_addr_lst_host,
-              m_n * sizeof (uint8_t *), cudaMemcpyHostToDevice);
+  gpuErrchk (cudaMemcpy (mp_addr_lst_device, mp_addr_lst_host,
+                         m_n * sizeof (uint8_t *),
+                         cudaMemcpyHostToDevice));
 
   /* Run experiment EXP_IT times to avoid noise */
   for (uint64_t i = 0; i < m_it; i++)
-      n_address_conflict_kernel<<<1, m_n>>> (mp_addr_lst_device,
-                                             mp_time_arr_device + i, modifier);
-  cudaDeviceSynchronize ();
+      n_address_conflict_kernel<<<1, m_n>>> (
+          mp_addr_lst_device, mp_time_arr_device + i * m_n, modifier);
+  gpuErrchk (cudaGetLastError ());
+  gpuErrchk (cudaDeviceSynchronize ());
 
   /* Copy the time values from GPU to HOST usable memory */
-  cudaMemcpy (mp_time_arr_host, mp_time_arr_device, sizeof (uint64_t) * m_it,
-              cudaMemcpyDeviceToHost);
+  gpuErrchk (cudaMemcpy (mp_time_arr_host, mp_time_arr_device,
+                         sizeof (uint64_t) * m_it * m_n,
+                         cudaMemcpyDeviceToHost));
 
   /* The true delay is consistent and noise will only cause the delay to go
      up, thus we take the minimum. Convert it to NS for better understanding.
   */
   uint64_t min
-      = toNS (*std::min_element (mp_time_arr_host, mp_time_arr_host + m_it));
+      = toNS (*std::min_element (mp_time_arr_host,
+                                 mp_time_arr_host + m_it * m_n));
 
   if (file)
     *file << min << '\n';
