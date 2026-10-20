@@ -84,6 +84,12 @@ def get_parser_conf_set(parser):
         help="File to store offset.",
         default="CONF_SET.txt",
     )
+    parser_conf_set.add_argument(
+        "--self-timing-tolerance",
+        type=int,
+        help="Maximum allowed difference between candidate and reference self-timing in ns.",
+        default=10,
+    )
 
 
 def get_parser_row_set(parser):
@@ -239,7 +245,7 @@ if __name__ == "__main__":
     match args.task_name:
         case "conf_set":
             p = subprocess.Popen(
-                f"{HAMMER_ROOT}/src/out/build/conf_set {args.size} {args.range} {args.it} {args.step} {args.threshold} {args.trgtBankOfs} {args.file}",
+                f"{HAMMER_ROOT}/src/out/build/conf_set {args.size} {args.range} {args.it} {args.step} {args.threshold} {args.trgtBankOfs} {args.file} {args.self_timing_tolerance}",
                 shell=True,
             )
             p.wait()
