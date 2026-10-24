@@ -22,6 +22,12 @@ main (int argc, char *argv[])
 
   std::ofstream offset_file;
   offset_file.open (output_filename); /* Argument File name */
+  if (!offset_file.is_open ())
+    {
+      std::cerr << CLI_PREFIX << "Unable to open output file: "
+                << output_filename << '\n';
+      return 1;
+    }
 
   /* Initialize address pairs */
   nc_test.set_addr_lst_host (0, offset_to_bank);

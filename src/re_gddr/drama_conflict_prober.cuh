@@ -67,7 +67,7 @@ public:
    * unning it within 1 single block with <= 32 threads.
    *
    * @param file writes the time values to file.
-   * @return uint64_t time value of the access.
+   * @return uint64_t robust time value of the accesses in ns.
    */
   uint64_t repeat_n_addr_exp (std::ofstream *file = nullptr, int modifier = 5);
 

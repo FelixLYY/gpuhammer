@@ -2,6 +2,7 @@
 #include <rh_utils.cuh>
 #include <algorithm>
 #include <iostream>
+#include <vector>
 namespace re_gddr
 {
 
@@ -64,17 +65,31 @@ ConflictProber::repeat_n_addr_exp (std::ofstream *file, int modifier)
                          sizeof (uint64_t) * m_it * m_n,
                          cudaMemcpyDeviceToHost));
 
-  /* The true delay is consistent and noise will only cause the delay to go
-     up, thus we take the minimum. Convert it to NS for better understanding.
-  */
-  uint64_t min
-      = toNS (*std::min_element (mp_time_arr_host,
-                                 mp_time_arr_host + m_it * m_n));
+  /*
+   * Reduce repetitions independently for each address.  The old global
+   * minimum mixed all addresses and repetitions, so one unusually fast
+   * sample could hide a conflict.  A lower median rejects isolated timing
+   * spikes while preserving delays that persist across repetitions.  Return
+   * the larger address median so a conflict on either address is retained.
+   */
+  uint64_t robust_delay = 0;
+  std::vector<uint64_t> samples (m_it);
+  for (uint64_t address = 0; address < m_n; address++)
+    {
+      for (uint64_t iteration = 0; iteration < m_it; iteration++)
+        samples[iteration] = mp_time_arr_host[iteration * m_n + address];
+
+      std::sort (samples.begin (), samples.end ());
+      uint64_t address_delay = samples[(m_it - 1) / 2];
+      robust_delay = std::max (robust_delay, address_delay);
+    }
+
+  uint64_t delay = toNS (robust_delay);
 
   if (file)
-    *file << min << '\n';
+    *file << delay << '\n';
 
-  return min;
+  return delay;
 }
 
 /**
