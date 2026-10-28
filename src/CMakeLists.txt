@@ -40,6 +40,9 @@ target_link_libraries(row_set PUBLIC re_lib)
 add_executable(bank_set ./re_gddr/bank_set_main.cu)
 target_link_libraries(bank_set PUBLIC re_lib)
 
+add_executable(same_allocation_map ./re_gddr/same_allocation_map.cu)
+target_link_libraries(same_allocation_map PUBLIC re_lib)
+
 # Get Timing values
 add_executable(gen_time ./re_gddr/gen_time_main.cu)
 target_link_libraries(gen_time PUBLIC re_lib)

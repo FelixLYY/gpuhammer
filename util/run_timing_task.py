@@ -1,5 +1,6 @@
 import argparse
 import subprocess
+import sys
 import os
 
 HAMMER_ROOT = os.environ['HAMMER_ROOT']
@@ -89,6 +90,36 @@ def get_parser_conf_set(parser):
         type=int,
         help="Maximum allowed difference between candidate and reference self-timing in ns.",
         default=10,
+    )
+    parser_conf_set.add_argument(
+        "--min-base-delay",
+        type=int,
+        help="Abort if the measured base delay is below this value in ns.",
+        default=0,
+    )
+    parser_conf_set.add_argument(
+        "--max-base-delay",
+        type=int,
+        help="Abort if the base delay (before or after the scan) exceeds this value in ns. 0 disables the guard.",
+        default=0,
+    )
+    parser_conf_set.add_argument(
+        "--confirm-runs",
+        type=int,
+        help="Robust mode: re-test each candidate this many times against a fresh local baseline. 0 uses the legacy single-pass scan.",
+        default=0,
+    )
+    parser_conf_set.add_argument(
+        "--refresh-interval",
+        type=int,
+        help="Robust mode: refresh the baseline every N candidates.",
+        default=512,
+    )
+    parser_conf_set.add_argument(
+        "--confirm-percent",
+        type=int,
+        help="Robust mode: percentage of re-tests that must confirm a conflict.",
+        default=80,
     )
 
 
@@ -245,10 +276,11 @@ if __name__ == "__main__":
     match args.task_name:
         case "conf_set":
             p = subprocess.Popen(
-                f"{HAMMER_ROOT}/src/out/build/conf_set {args.size} {args.range} {args.it} {args.step} {args.threshold} {args.trgtBankOfs} {args.file} {args.self_timing_tolerance}",
+                f"{HAMMER_ROOT}/src/out/build/conf_set {args.size} {args.range} {args.it} {args.step} {args.threshold} {args.trgtBankOfs} {args.file} {args.self_timing_tolerance} {args.min_base_delay} {args.max_base_delay} {args.confirm_runs} {args.refresh_interval} {args.confirm_percent}",
                 shell=True,
             )
             p.wait()
+            sys.exit(p.returncode)
         case "row_set":
             p = subprocess.Popen(
                 f"{HAMMER_ROOT}/src/out/build/row_set {args.size} {args.it} {args.threshold} {args.trgtBankOfs} {args.max} {args.inputFile} {args.outputFile}",
